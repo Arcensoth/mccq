@@ -4,7 +4,7 @@ Minecraft command query program. Inspired by the in-game help command, with adde
 ## Program options
 Start with a basic command:
 ```bash
-# mcc tag
+# mccq tag
 
 tag <targets> add|list|remove ...  # 18w03b
 ```
@@ -12,21 +12,21 @@ Notice how the command is expanded until more than one subcommand/argument is fo
 
 Choose one of the subcommands:
 ```bash
-# mcc tag targets add
+# mccq tag targets add
 
 tag <targets> add <name>  # 18w03b
 ```
 
 Use `-t` to render argument types:
 ```bash
-# mcc -t tag targets add
+# mccq -t tag targets add
 
 tag <targets: entity> add <name: string>  # 18w03b
 ```
 
 Use `-e` to expand all subcommands, bypassing capacity:
 ```bash
-# mcc -e tag
+# mccq -e tag
 
 # 18w03b
 tag <targets> add <name>
@@ -36,7 +36,7 @@ tag <targets> remove <name>
 
 Use `-c CAPACITY` to provide a threshold determining whether to expand subcommands:
 ```bash
-# mcc -c 3 tag
+# mccq -c 3 tag
 
 # 18w03b
 tag <targets> add <name>
@@ -46,14 +46,14 @@ tag <targets> remove <name>
 
 Use `-v VERSION` to specify a particular version to query:
 ```bash
-# mcc -v 18w01a execute
+# mccq -v 18w01a execute
 
 execute align|as|at|if|offset|run|store|unless ...  # 18w01a
 ```
 
 Use multiple `-v VERSION` to query several versions at once:
 ```bash
-# mcc -v 18w01a -v 18w02a execute
+# mccq -v 18w01a -v 18w02a execute
 
 execute align|as|at|if|offset|run|store|unless ...  # 18w01a
 execute align|anchored|as|at|facing|if|in|positioned|rotated|run|store|unless ...  # 18w02a
@@ -62,7 +62,7 @@ execute align|anchored|as|at|facing|if|in|positioned|rotated|run|store|unless ..
 ## Regex search
 Each search term of the provided `command` is treated as a regex pattern, meaning any number of subcommands and arguments can be queried dynamically:
 ```bash
-# mcc execute a.*
+# mccq execute a.*
 
 # 18w03b
 execute align <axes> -> execute
@@ -73,7 +73,7 @@ execute at <targets> -> execute
 
 Searching for multiple subcommands/arguments:
 ```bash
-# mcc execute a.* targets
+# mccq execute a.* targets
 
 # 18w03b
 execute as <targets> -> execute
@@ -82,7 +82,7 @@ execute at <targets> -> execute
 
 Search terms are case-insensitive:
 ```bash
-# mcc gamerule domob.*
+# mccq gamerule domob.*
 
 # 18w03b
 gamerule doMobLoot
@@ -93,7 +93,7 @@ gamerule doMobSpawning <value>
 
 There is a special-case: a single `.` is treated as a wildcard. Basically it just turns into `.*`, which will match any term:
 ```bash
-# mcc clone . . . masked
+# mccq clone . . . masked
 
 # 18w03b
 clone <begin> <end> <destination> masked
