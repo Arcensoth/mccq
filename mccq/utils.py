@@ -1,8 +1,8 @@
 import shlex
 
 from mccq import errors
-from mccq.cli.argparser import ARGPARSER
-from mccq.cli.mccq_arguments import MCCQArguments
+from mccq.argparser import ARGPARSER
+from mccq.mccq_arguments import MCCQArguments
 
 
 def parse_mccq_arguments(command: str) -> MCCQArguments:

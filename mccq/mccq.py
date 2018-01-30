@@ -4,9 +4,8 @@ import os
 import re
 import typing
 
-from mccq import errors
-from mccq.cli import utils as cli_utils
-from mccq.cli.mccq_arguments import MCCQArguments
+from mccq import errors, utils
+from mccq.mccq_arguments import MCCQArguments
 from mccq.data.data_node import MCCQDataNode
 from mccq.data.parsers.abc.mccq_data_parser import MCCQDataParser
 from mccq.data.parsers.parsers import PARSERS
@@ -168,7 +167,7 @@ class MCCQ:
         return results
 
     def results(self, command: str) -> MCCQResults:
-        return self.results_from_arguments(cli_utils.parse_mccq_arguments(command))
+        return self.results_from_arguments(utils.parse_mccq_arguments(command))
 
     @property
     def available_versions(self) -> SetOfStrings:
