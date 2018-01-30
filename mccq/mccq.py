@@ -143,7 +143,8 @@ class MCCQ:
         for version, definition in versions_definition.items():
             self.load(version, **definition)
 
-        log.info('Loaded commands for {} versions: {}'.format(len(self.available_versions), self.available_versions))
+        log.info('Loaded commands for {} versions: {}'.format(
+            len(self.available_versions), ', '.join(self.available_versions)))
 
     def results_from_arguments(self, arguments: MCCQArguments) -> MCCQResults:
         requested_versions = arguments.versions or self.show_versions
@@ -156,8 +157,15 @@ class MCCQ:
             raise errors.NoVersionsAvailableMCCQError(requested_versions)
 
         # use the original tuple to maintain order, filtering as we go
-        return {version: self._commands_for_version(version, arguments) for version in requested_versions
-                if version in valid_versions}
+        results = {
+            version: self._commands_for_version(version, arguments) for version in requested_versions
+            if version in valid_versions
+        }
+
+        # remove empty results
+        results = {k: v for k, v in results.items() if v}
+
+        return results
 
     def results(self, command: str) -> MCCQResults:
         return self.results_from_arguments(cli_utils.parse_mccq_arguments(command))
