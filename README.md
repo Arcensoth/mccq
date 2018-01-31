@@ -98,7 +98,7 @@ gamerule doMobSpawning
 gamerule doMobSpawning <value>
 ```
 
-Special-case: a single `.` is treated as a wildcard and will match any subcommands/argument:
+Special-case: a single `.` is treated as a wildcard, matching all subcommands/arguments:
 ```bash
 >mccq clone . . . masked
 # 18w03b
@@ -107,4 +107,4 @@ clone <begin> <end> <destination> masked force
 clone <begin> <end> <destination> masked move
 clone <begin> <end> <destination> masked normal
 ```
-Which is a convenient way of quickly reaching deeper subcommands/arguments without hving to type out each term explicitly.
+Which is a convenient way of quickly diving into the command without having to explicitly type out each term.
