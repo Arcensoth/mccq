@@ -33,7 +33,7 @@ tag <targets> remove <name>
 ```
 Be warned that this can cause a large amount of output for commands with many subcommands/arguments.
 
-Search for specific subcommands and arguments:
+Search for specific subcommands/arguments:
 ```bash
 >mccq tag targets add
 tag <targets> add <name>  # 18w03b
@@ -46,7 +46,7 @@ Speaking of arguments, use `-t` to render their types:
 tag <targets: entity> add <name: string>  # 18w03b
 ```
 
-Use `-c CAPACITY` to provide a threshold determining whether to expand subcommands:
+Use `-c CAPACITY` to provide a threshold determining whether to expand a command:
 ```bash
 >mccq -c 3 tag
 # 18w03b
@@ -54,7 +54,7 @@ tag <targets> add <name>
 tag <targets> list
 tag <targets> remove <name>
 ```
-This allows commands to expand so long as they contain fewer subcommands/arguments than the given threshold.
+This allows a command to expand so long as the number of subcommands/arguments it contains does not exceed the given threshold.
 
 Use `-v VERSION` to query a particular version:
 ```bash
