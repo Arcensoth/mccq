@@ -2,8 +2,9 @@ import argparse
 
 ARGPARSER = argparse.ArgumentParser(
     'mccq',
-    description='Minecraft command query program. Inspired by the in-game help command, with added features like '
-                'version reporting and expandable regex search.')
+    description='Minecraft command query program. Inspired by the in-game help command, with added features like'
+                'multiple version support and expandable regex search.',
+    add_help=False)
 
 ARGPARSER.add_argument(
     '-t', '--showtypes', action='store_true', help='whether to show argument types')
