@@ -88,7 +88,7 @@ class MCCQ:
         # at this point 'else' means there are still tokens to search, so the query goes deeper than the current node
         # and we can just ignore it
 
-    def _commands_for_version(self, version: str, arguments: MCCQArguments) -> TupleOfStrings:
+    def commands_for_version(self, version: str, arguments: MCCQArguments) -> TupleOfStrings:
         root_node = self.data.get(version)
 
         # make sure the version is loaded
@@ -151,18 +151,30 @@ class MCCQ:
         # note that using a set ruins the order
         valid_versions = set(requested_versions).intersection(self.available_versions)
 
-        # make sure we have at least one of the requested versions
+        # make sure at least one of the requested versions is available
         if not valid_versions:
             raise errors.NoVersionsAvailableMCCQError(requested_versions)
 
-        # use the original tuple to maintain order, filtering as we go
-        results = {
-            version: self._commands_for_version(version, arguments) for version in requested_versions
-            if version in valid_versions
-        }
+        # reorder the versions
+        final_versions = (version for version in requested_versions if version in valid_versions)
 
-        # remove empty results
-        results = {k: v for k, v in results.items() if v}
+        # build results
+        # make sure to handle version-specific errors
+        results = {}
+        for version in final_versions:
+            try:
+                commands = self.commands_for_version(version, arguments)
+
+            # ignore unknown versions and commands because we may have other results
+            except (errors.NoSuchVersionMCCQError, errors.NoSuchCommandMCCQError):
+                continue
+
+            # let this one through: errors.MissingCommandMCCQError
+            # because if there's no command, the version doesn't matter
+
+            # don't include versions with no results
+            if commands:
+                results[version] = commands
 
         return results
 
