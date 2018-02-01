@@ -14,7 +14,7 @@ from mccq.typedefs import IterableOfStrings, SetOfStrings, TupleOfStrings
 log = logging.getLogger(__name__)
 
 # map of version names to remaining `MCCQ.load()` method arguments
-# example: `{'18w01a': {'parser': 'v1'}}`
+# example: `{'18w01a': {'parser': 'v1', 'path': './commands.18w01a.json'}}`
 VersionsDefinition = typing.Dict[str, dict]
 
 # map of version names to command results
@@ -110,8 +110,10 @@ class MCCQ:
         # we already did some work here; bypass the root node and start at the base command node
         return tuple(self._command_lines_recursive(arguments, base_node, index=1))
 
-    def load(self, version: str, parser: typing.Union[str, MCCQDataParser]):
-        data_path = os.path.join(self.versions_storage, version, 'generated', 'reports', 'commands.json')
+    def load(self, version: str, parser: typing.Union[str, MCCQDataParser], path: str = None):
+        # prioritize an explicit path
+        data_path = path if path else os.path.join(
+            self.versions_storage, version, 'generated', 'reports', 'commands.json')
 
         log.info('Loading commands for version {} from: {}'.format(version, data_path))
 
