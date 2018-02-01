@@ -1,14 +1,15 @@
 import json
 import logging
-import os
 import re
 import typing
+import urllib.parse
+import urllib.request
 
 from mccq import errors, utils
-from mccq.mccq_arguments import MCCQArguments
 from mccq.data.data_node import MCCQDataNode
 from mccq.data.parsers.abc.mccq_data_parser import MCCQDataParser
 from mccq.data.parsers.parsers import PARSERS
+from mccq.mccq_arguments import MCCQArguments
 from mccq.typedefs import IterableOfStrings, SetOfStrings, TupleOfStrings
 
 log = logging.getLogger(__name__)
@@ -25,16 +26,29 @@ MCCQResults = typing.Dict[str, TupleOfStrings]
 class MCCQ:
     def __init__(
             self,
-            versions_storage: str,
-            versions_definition: VersionsDefinition,
+            database: str,
+            versions: VersionsDefinition,
             show_versions: IterableOfStrings,
     ):
-        self.versions_storage = versions_storage
+        self.database = database
         self.show_versions: TupleOfStrings = tuple(show_versions)
 
         self.data: typing.Dict[str, MCCQDataNode] = {}
 
-        self.reload(versions_definition)
+        self.reload(versions)
+
+    @staticmethod
+    def load_from_filesystem(path: str):
+        with open(path) as fp:
+            raw = json.load(fp)
+        return raw
+
+    @staticmethod
+    def load_from_internet(path: str):
+        response = urllib.request.urlopen(path)
+        content = response.read().decode('utf8')
+        raw = json.loads(content)
+        return raw
 
     def _command_lines_from_node(self, arguments: MCCQArguments, node: MCCQDataNode) -> IterableOfStrings:
         command = node.command_t if arguments.showtypes else node.command
@@ -112,15 +126,21 @@ class MCCQ:
 
     def load(self, version: str, parser: typing.Union[str, MCCQDataParser], path: str = None):
         # prioritize an explicit path
-        data_path = path if path else os.path.join(
-            self.versions_storage, version, 'generated', 'reports', 'commands.json')
+        data_path = path if path else '/'.join((
+            self.database, version, 'generated', 'reports', 'commands.json'))
 
         log.info('Loading commands for version {} from: {}'.format(version, data_path))
 
         # load the data file
         try:
-            with open(data_path) as fp:
-                raw = json.load(fp)
+            # check if we're dealing with the internet
+            if bool(urllib.parse.urlparse(data_path).scheme):
+                raw = self.load_from_internet(data_path)
+
+            # otherwise go local
+            else:
+                raw = self.load_from_filesystem(data_path)
+
         except Exception as ex:
             raise errors.DataFileFailureMCCQError(version, data_path) from ex
 
