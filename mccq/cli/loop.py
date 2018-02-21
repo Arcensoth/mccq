@@ -1,7 +1,10 @@
+import logging
 import shlex
 
 from mccq import errors
 from mccq.query_manager import QueryManager
+
+log = logging.getLogger(__name__)
 
 
 def cli_loop(qm: QueryManager):
@@ -30,6 +33,8 @@ def cli_loop(qm: QueryManager):
 
             except Exception as ex:
                 print(f'Error: {ex}')
+                if log.isEnabledFor(logging.DEBUG):
+                    log.exception('Error')
 
         elif command:
             try:
@@ -43,3 +48,5 @@ def cli_loop(qm: QueryManager):
 
             except Exception as ex:
                 print(f'Error: {ex}')
+                if log.isEnabledFor(logging.DEBUG):
+                    log.exception('Error')
