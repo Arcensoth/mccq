@@ -55,6 +55,7 @@ print('Enter a Minecraft command query, or "exit" to leave.')
 while True:
     try:
         command = input('> ')
+
     except KeyboardInterrupt:
         print()
         break
@@ -77,7 +78,7 @@ while True:
         except Exception as ex:
             print(f'Error: {ex}')
 
-    else:
+    elif command:
         try:
             for version, commands in qm.results(command).items():
                 print(f'# {version}')
