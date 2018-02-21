@@ -62,6 +62,63 @@ class QueryManager:
         except Exception as ex:
             raise errors.ArgumentParserFailed(command) from ex
 
+    def _trimed_tree_recursive(self, arguments: QueryArguments, node: DataNode, index: int) \
+            -> typing.Union[DataNode, None]:
+        # determine the current search term
+        token = arguments.command[index] if len(arguments.command) > index else None
+
+        # use regex to search for the subcommand/argument name in the patternized token
+        # special case: dot matches all
+        search_children = node.children if token == '.' else {
+            child_key: child for child_key, child in (node.children or {}).items()
+            if re.match(f'^{token}$', child_key, re.IGNORECASE)
+        }
+
+        # branch: search all matching children recursively (depth-first) for subcommands
+        if search_children:
+            trimmed_children = {}
+
+            for child_key, child in search_children.items():
+                trimmed_child = self._trimed_tree_recursive(arguments, child, index + 1)
+
+                if trimmed_child:
+                    trimmed_children[child_key] = trimmed_child
+
+            if trimmed_children:
+                # return a new node with trimmed children
+                return DataNode(
+                    relevant=node.relevant,
+                    population=node.population,
+                    key=node.key,
+                    command=node.command,
+                    command_t=node.command_t,
+                    argument=node.argument,
+                    argument_t=node.argument_t,
+                    collapsed=node.collapsed,
+                    collapsed_t=node.collapsed_t,
+                    children=trimmed_children)
+
+        # leaf: no children to search and tokens depleted; return a childless copy of the node
+        elif not token:
+            return DataNode(
+                relevant=node.relevant,
+                population=node.population,
+                key=node.key,
+                command=node.command,
+                command_t=node.command_t,
+                argument=node.argument,
+                argument_t=node.argument_t,
+                collapsed=node.collapsed,
+                collapsed_t=node.collapsed_t)
+
+        # at this point 'else' means there are still tokens to search, so the query goes deeper than the current node
+        # and we can just ignore it
+
+    def tree_for_version(self, version: str, arguments: QueryArguments) -> typing.Union[DataNode, None]:
+        # build a trimmed tree containing only the nodes that match the given arguments
+        root_node = self.database.get(version)
+        return self._trimed_tree_recursive(arguments, root_node, index=0)
+
     def _command_lines_from_node(self, arguments: QueryArguments, node: DataNode) -> IterableOfStrings:
         command = node.command_t if arguments.showtypes else node.command
         collapsed = (node.collapsed_t if arguments.showtypes else node.collapsed) or command
@@ -114,6 +171,22 @@ class QueryManager:
         # at this point 'else' means there are still tokens to search, so the query goes deeper than the current node
         # and we can just ignore it
 
+    def filter_versions(self, arguments: QueryArguments) -> TupleOfStrings:
+        requested_versions = arguments.versions or self.show_versions
+
+        # make sure at least one version was requested
+        if not requested_versions:
+            raise errors.NoVersionRequested()
+
+        # filter out unavailable versions
+        filtered_versions = self.database.filter_versions(requested_versions)
+
+        # make sure at least one of the requested versions is available
+        if not filtered_versions:
+            raise errors.NoVersionsAvailable(requested_versions)
+
+        return filtered_versions
+
     def commands_for_version(self, version: str, arguments: QueryArguments) -> TupleOfStrings:
         root_node = self.database.get(version)
 
@@ -137,18 +210,7 @@ class QueryManager:
         return tuple(self._command_lines_recursive(arguments, base_node, index=1))
 
     def results_from_arguments(self, arguments: QueryArguments) -> QueryResults:
-        requested_versions = arguments.versions or self.show_versions
-
-        # make sure at least one version was requested
-        if not requested_versions:
-            raise errors.NoVersionRequested()
-
-        # filter out unavailable versions
-        filtered_versions = self.database.filter_versions(requested_versions)
-
-        # make sure at least one of the requested versions is available
-        if not filtered_versions:
-            raise errors.NoVersionsAvailable(requested_versions)
+        filtered_versions = self.filter_versions(arguments)
 
         # build results
         # make sure to handle version-specific errors

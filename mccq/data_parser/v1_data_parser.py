@@ -61,14 +61,15 @@ class V1DataParser(DataParser):
                 collapsed_t += ' ...'
 
         return DataNode(
+            relevant=relevant,
+            population=population,
+            key=key,
             command=my_command,
             command_t=my_command_t,
             argument=argument,
             argument_t=argument_t,
             collapsed=collapsed,
             collapsed_t=collapsed_t,
-            relevant=relevant,
-            population=population,
             children=my_children,
         )
 

@@ -57,8 +57,17 @@ print('[::] Minecraft Command Query CLI [::]')
 
 # attempt to load extra features like navigation and autocompletion
 try:
-    from mccq.cli import extras
+    import readline
+    from mccq.cli.completer import CLICompleter
+
+    cc = CLICompleter(qm)
+
+    readline.set_completer_delims(' \t\n')
+    readline.parse_and_bind('tab: complete')
+    readline.set_completer(cc.complete)
+
     print('Navigation and autocompletion are available on the current system.')
+
 except:
     pass
 
