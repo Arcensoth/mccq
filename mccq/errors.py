@@ -2,17 +2,24 @@ class MCCQError(Exception):
     """ MCCQ base error. """
 
 
-class ArgumentParserFailedMCCQError(MCCQError):
+class ArgumentParserFailed(MCCQError):
     """ Raised when the argument parser fails to process the given command string. """
     def __init__(self, command: str, *args):
         super().__init__(*args)
         self.command = command
 
     def __str__(self):
-        return 'Argument parsers failed to process command: {}'.format(self.command)
+        return f'Argument parsers failed to process command: {self.command}'
 
 
-class NoVersionsAvailableMCCQError(MCCQError):
+class NoVersionRequested(MCCQError):
+    """ Raised when no versions were requested. """
+
+    def __str__(self):
+        return 'No versions were requested'
+
+
+class NoVersionsAvailable(MCCQError):
     """ Raised when none of the requested versions are available. """
 
     def __init__(self, requested_versions: tuple, *args):
@@ -20,27 +27,28 @@ class NoVersionsAvailableMCCQError(MCCQError):
         self.requested_versions = requested_versions
 
     def __str__(self):
-        return 'None of the requested versions are available: {}'.format(', '.join(self.requested_versions))
+        versions_str = ', '.join(self.requested_versions)
+        return f'None of the requested versions are available: {versions_str}'
 
 
-class NoSuchVersionMCCQError(MCCQError):
+class NoSuchVersion(MCCQError):
     """ Raised when the accessed version is not available. """
     def __init__(self, version: str, *args):
         super().__init__(*args)
         self.version = version
 
     def __str__(self):
-        return 'Version {} is not available'.format(self.version)
+        return f'Version {self.version} is not available'
 
 
-class MissingCommandMCCQError(MCCQError):
+class MissingCommand(MCCQError):
     """ Raised when the provided command is empty or null. """
 
     def __str__(self):
         return 'No command was provided'
 
 
-class NoSuchCommandMCCQError(MCCQError):
+class NoSuchCommand(MCCQError):
     """ Raised when the given command does not contain a valid base command. """
 
     def __init__(self, command: str, *args):
@@ -48,22 +56,32 @@ class NoSuchCommandMCCQError(MCCQError):
         self.command = command
 
     def __str__(self):
-        return 'Command does not exist: {}'.format(self.command)
+        return f'Command does not exist: {self.command}'
 
 
-class DataFileFailureMCCQError(MCCQError):
-    """ Raised when the data file for the given version failed to load. """
+class UnknownLoader(MCCQError):
+    """ Raised when an unknown loader is specified. """
 
-    def __init__(self, version: str, data_path: str, *args):
+    def __init__(self, loader: str, *args):
         super().__init__(*args)
-        self.version = version
-        self.data_path = data_path
+        self.loader = loader
 
     def __str__(self):
-        return 'Failed to load data for version {} from:'.format(self.version, self.data_path)
+        return f'Loader not recognized: {self.loader}'
 
 
-class UnknownParserMCCQError(MCCQError):
+class LoaderFailure(MCCQError):
+    """ Raised when the data file for the given version failed to load. """
+
+    def __init__(self, version: str, *args):
+        super().__init__(*args)
+        self.version = version
+
+    def __str__(self):
+        return f'Failed to load data for version {self.version}'
+
+
+class UnknownParser(MCCQError):
     """ Raised when an unknown parser is specified. """
 
     def __init__(self, parser: str, *args):
@@ -71,10 +89,10 @@ class UnknownParserMCCQError(MCCQError):
         self.parser = parser
 
     def __str__(self):
-        return 'Parser not recognized: {}'.format(self.parser)
+        return f'Parser not recognized: {self.parser}'
 
 
-class ParserFailureMCCQError(MCCQError):
+class ParserFailure(MCCQError):
     """ Raised when a parser fails to process data. """
 
     def __init__(self, version: str, *args):
@@ -82,4 +100,4 @@ class ParserFailureMCCQError(MCCQError):
         self.version = version
 
     def __str__(self):
-        return 'Failed to parse commands for version {}'.format(self.version)
+        return f'Failed to parse commands for version {self.version}'

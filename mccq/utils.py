@@ -2,16 +2,16 @@ import shlex
 
 from mccq import errors
 from mccq.argparser import ARGPARSER
-from mccq.mccq_arguments import MCCQArguments
+from mccq.query_arguments import QueryArguments
 
 
-def parse_mccq_arguments(command: str) -> MCCQArguments:
+def parse_query_arguments(command: str) -> QueryArguments:
     try:
         # split into tokens using shell-like syntax (preserve quoted substrings)
         parsed_args = ARGPARSER.parse_args(shlex.split(command))
 
         # return an object representation
-        return MCCQArguments(
+        return QueryArguments(
             command=tuple(parsed_args.command),  # immutable copy
             showtypes=parsed_args.showtypes,
             explode=parsed_args.explode,
@@ -20,4 +20,4 @@ def parse_mccq_arguments(command: str) -> MCCQArguments:
         )
 
     except Exception as ex:
-        raise errors.ArgumentParserFailedMCCQError(command) from ex
+        raise errors.ArgumentParserFailed(command) from ex
