@@ -43,5 +43,6 @@ class CLICompleter:
         if state:
             return self.completions[state]
         else:
-            self.completions = tuple(set(self.make_completions()))
+            # append completions with a space so that singular results are completed in full
+            self.completions = tuple(word + ' ' for word in set(self.make_completions()))
             return self.completions[0]
