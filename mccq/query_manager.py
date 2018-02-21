@@ -114,12 +114,7 @@ class QueryManager:
         # at this point 'else' means there are still tokens to search, so the query goes deeper than the current node
         # and we can just ignore it
 
-    def tree_for_version(self, version: str, arguments: QueryArguments) -> typing.Union[DataNode, None]:
-        # build a trimmed tree containing only the nodes that match the given arguments
-        root_node = self.database.get(version)
-        return self._trimed_tree_recursive(arguments, root_node, index=0)
-
-    def _command_lines_from_node(self, arguments: QueryArguments, node: DataNode) -> IterableOfStrings:
+    def _command_lines_recursive(self, arguments: QueryArguments, node: DataNode) -> IterableOfStrings:
         command = node.command_t if arguments.showtypes else node.command
         collapsed = (node.collapsed_t if arguments.showtypes else node.collapsed) or command
 
@@ -141,35 +136,12 @@ class QueryManager:
                 or len(node.children) == 1
         ):
             for child in node.children.values():
-                yield from self._command_lines_from_node(arguments, child)
+                yield from self._command_lines_recursive(arguments, child)
 
         # otherwise produce a collapsed form
         # be careful not to produce duplicate results for "relevant" nodes
         elif collapsed and not node.relevant:
             yield collapsed
-
-    def _command_lines_recursive(self, arguments: QueryArguments, node: DataNode, index: int) -> IterableOfStrings:
-        # determine the current search term
-        token = arguments.command[index] if len(arguments.command) > index else None
-
-        # use regex to search for the subcommand/argument name in the patternized token
-        # special case: dot matches all
-        search_children = node.children if token == '.' else {
-            child_key: child for child_key, child in (node.children or {}).items()
-            if re.match(f'^{token}$', child_key, re.IGNORECASE)
-        }
-
-        # branch: search all matching children recursively (depth-first) for subcommands
-        if search_children:
-            for child_key, child in search_children.items():
-                yield from self._command_lines_recursive(arguments, child, index + 1)
-
-        # leaf: no children to search and tokens depleted; start producing commands from here
-        elif not token:
-            yield from self._command_lines_from_node(arguments, node)
-
-        # at this point 'else' means there are still tokens to search, so the query goes deeper than the current node
-        # and we can just ignore it
 
     def filter_versions(self, arguments: QueryArguments) -> TupleOfStrings:
         requested_versions = arguments.versions or self.show_versions
@@ -187,10 +159,29 @@ class QueryManager:
 
         return filtered_versions
 
-    def commands_for_version(self, version: str, arguments: QueryArguments) -> TupleOfStrings:
+    def tree_for_version(self, version: str, arguments: QueryArguments) -> typing.Union[DataNode, None]:
+        # get the root node and make sure the version is loaded
         root_node = self.database.get(version)
+        if not root_node:
+            raise errors.NoSuchVersion(version)
 
-        # make sure the version is loaded
+        # build a trimmed tree containing only the nodes that match the given arguments
+        return self._trimed_tree_recursive(arguments, root_node, index=0)
+
+    def commands_for_version(self, version: str, arguments: QueryArguments) -> TupleOfStrings:
+        # first build a result tree from the given arguments
+        tree = self.tree_for_version(version, arguments)
+
+        # if no tree, short-circuit
+        if not tree:
+            return ()
+
+        # then check every branch and leaf for relevant commands
+        return tuple(self._command_lines_recursive(arguments, tree))
+
+    def commands_for_version_assert_base(self, version: str, arguments: QueryArguments) -> TupleOfStrings:
+        # get the root node and make sure the version is loaded
+        root_node = self.database.get(version)
         if not root_node:
             raise errors.NoSuchVersion(version)
 
@@ -201,13 +192,12 @@ class QueryManager:
             raise errors.MissingCommand()
 
         # make sure the base command is valid
-        try:
-            base_node = root_node.children[base_command]
-        except Exception as ex:
-            raise errors.NoSuchCommand(base_command) from ex
+        base_node = root_node.children.get(base_command)
+        if not base_node:
+            raise errors.NoSuchCommand(base_command)
 
-        # we already did some work here; bypass the root node and start at the base command node
-        return tuple(self._command_lines_recursive(arguments, base_node, index=1))
+        # proceed as usual
+        return self.commands_for_version(version, arguments)
 
     def results_from_arguments(self, arguments: QueryArguments) -> QueryResults:
         filtered_versions = self.filter_versions(arguments)
