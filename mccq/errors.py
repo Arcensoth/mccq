@@ -24,10 +24,10 @@ class NoVersionsAvailable(MCCQError):
 
     def __init__(self, requested_versions: tuple, *args):
         super().__init__(*args)
-        self.requested_versions = requested_versions
+        self.versions = requested_versions
 
     def __str__(self):
-        versions_str = ', '.join(self.requested_versions)
+        versions_str = ', '.join(self.versions)
         return f'None of the requested versions are available: {versions_str}'
 
 
@@ -39,6 +39,16 @@ class NoSuchVersion(MCCQError):
 
     def __str__(self):
         return f'Version {self.version} is not available'
+
+
+class VersionNotWhitelisted(MCCQError):
+    """ Raised when the version whitelist is enabled and the requested version is not present. """
+    def __init__(self, version: str, *args):
+        super().__init__(*args)
+        self.version = version
+
+    def __str__(self):
+        return f'Version {self.version} is not whitelisted'
 
 
 class MissingCommand(MCCQError):

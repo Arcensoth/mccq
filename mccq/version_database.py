@@ -71,9 +71,11 @@ class VersionDatabase:
 
         # parse and insert data
         try:
-            self._cache[version] = self.parser.parse(raw)
+            parsed = self.parser.parse(raw)
         except Exception as ex:
             raise errors.ParserFailure(version) from ex
+
+        self.put(version, parsed)
 
     def reload(self):
         self._cache = {}
@@ -84,6 +86,11 @@ class VersionDatabase:
             log.info(f'Loading version {version} into cache')
             self._load(version)
         return self._cache[version]
+
+    def put(self, version: str, root_node: DataNode):
+        if self.whitelist and version not in self.whitelist:
+            raise errors.VersionNotWhitelisted(version)
+        self._cache[version] = root_node
 
     def filter_versions(self, requested_versions) -> TupleOfStrings:
         # if no whitelist, everything is valid
