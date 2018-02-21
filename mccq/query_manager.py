@@ -4,7 +4,8 @@ import typing
 
 from mccq import errors
 from mccq.argument_parser import ArgumentParser
-from mccq.data_node import DataNode
+from mccq.node.data_node import DataNode
+from mccq.node.query_node import QueryNode
 from mccq.query_arguments import QueryArguments
 from mccq.typedefs import IterableOfStrings, TupleOfStrings
 from mccq.version_database import VersionDatabase
@@ -62,85 +63,63 @@ class QueryManager:
         except Exception as ex:
             raise errors.ArgumentParserFailed(command) from ex
 
-    def _trimed_tree_recursive(self, arguments: QueryArguments, node: DataNode, index: int) \
-            -> typing.Union[DataNode, None]:
+    def _query_tree_recursive(self, arguments: QueryArguments, node: DataNode, index: int) \
+            -> typing.Union[QueryNode, None]:
         # determine the current search term
         token = arguments.command[index] if len(arguments.command) > index else None
 
         # use regex to search for the subcommand/argument name in the patternized token
         # special case: dot matches all
-        search_children = node.children if token == '.' else {
-            child_key: child for child_key, child in (node.children or {}).items()
-            if re.match(f'^{token}$', child_key, re.IGNORECASE)
-        }
+        search_children = node.children if token == '.' else tuple(
+            child for child in node.children
+            if re.match(f'^{token}$', child.key, re.IGNORECASE)
+        )
 
         # branch: search all matching children recursively (depth-first) for subcommands
         if search_children:
-            trimmed_children = {}
+            query_children = tuple(item for item in (
+                self._query_tree_recursive(arguments, child, index + 1) for child in search_children
+            ) if item is not None)
 
-            for child_key, child in search_children.items():
-                trimmed_child = self._trimed_tree_recursive(arguments, child, index + 1)
+            if query_children:
+                # return a query node with the calculated subset of children
+                return QueryNode(data_node=node, children=query_children)
 
-                if trimmed_child:
-                    trimmed_children[child_key] = trimmed_child
-
-            if trimmed_children:
-                # return a new node with trimmed children
-                return DataNode(
-                    relevant=node.relevant,
-                    population=node.population,
-                    key=node.key,
-                    command=node.command,
-                    command_t=node.command_t,
-                    argument=node.argument,
-                    argument_t=node.argument_t,
-                    collapsed=node.collapsed,
-                    collapsed_t=node.collapsed_t,
-                    children=trimmed_children)
-
-        # leaf: no children to search and tokens depleted; return a childless copy of the node
+        # leaf: no children to search and tokens depleted; return a childless query node
+        # note that even though this is a recursive leaf, the contained data node may itself have children
         elif not token:
-            return DataNode(
-                relevant=node.relevant,
-                population=node.population,
-                key=node.key,
-                command=node.command,
-                command_t=node.command_t,
-                argument=node.argument,
-                argument_t=node.argument_t,
-                collapsed=node.collapsed,
-                collapsed_t=node.collapsed_t)
+            return QueryNode(data_node=node)
 
         # at this point 'else' means there are still tokens to search, so the query goes deeper than the current node
         # and we can just ignore it
+        ...
 
-    def _command_lines_recursive(self, arguments: QueryArguments, node: DataNode) -> IterableOfStrings:
+    def _commands_recursives(self, arguments: QueryArguments, node: DataNode) -> IterableOfStrings:
         command = node.command_t if arguments.showtypes else node.command
-        collapsed = (node.collapsed_t if arguments.showtypes else node.collapsed) or command
+        collapsed = node.collapsed_t if arguments.showtypes else node.collapsed
 
-        # only produce relevant commands:
+        # render relevant commands:
         #   - all executable commands: `scoreboard players list`, `scoreboard players list <target>`
         #   - all chainable (redirect) commands: `execute as <entity> -> execute`
         #   - some exceptional cases: `execute run ...`
-        if command and node.relevant:
+        if node.relevant:
             yield command
 
         # determine whether to continue searching any existing children for subcommands
         # if any of the following are true, continue searching:
         #   1. explode override flag is set
         #   2. capacity has not been reached
-        #   3. only one child/subcommand to expand
+        #   3. only one child to search
         if node.children and (
                 arguments.explode
                 or (node.population <= arguments.capacity)
                 or len(node.children) == 1
         ):
-            for child in node.children.values():
-                yield from self._command_lines_recursive(arguments, child)
+            for child in node.children:
+                yield from self._commands_recursives(arguments, child)
 
-        # otherwise produce a collapsed form
-        # be careful not to produce duplicate results for "relevant" nodes
-        elif collapsed and not node.relevant:
+        # otherwise render a collapsed form
+        elif collapsed:
             yield collapsed
 
     def filter_versions(self, arguments: QueryArguments) -> TupleOfStrings:
@@ -159,45 +138,27 @@ class QueryManager:
 
         return filtered_versions
 
-    def tree_for_version(self, version: str, arguments: QueryArguments) -> typing.Union[DataNode, None]:
-        # get the root node and make sure the version is loaded
-        root_node = self.database.get(version)
-        if not root_node:
+    def query_tree_for_version(self, version: str, arguments: QueryArguments) -> typing.Union[QueryNode, None]:
+        # get the root data node and make sure the version is loaded
+        root_data_node = self.database.get(version)
+        if not root_data_node:
             raise errors.NoSuchVersion(version)
 
         # build a trimmed tree containing only the nodes that match the given arguments
-        return self._trimed_tree_recursive(arguments, root_node, index=0)
+        query_tree = self._query_tree_recursive(arguments, root_data_node, index=0)
 
-    def commands_for_version(self, version: str, arguments: QueryArguments) -> TupleOfStrings:
+        return query_tree
+
+    def commands_for_version(self, version: str, arguments: QueryArguments) -> IterableOfStrings:
         # first build a result tree from the given arguments
-        tree = self.tree_for_version(version, arguments)
+        query_tree = self.query_tree_for_version(version, arguments)
 
-        # if no tree, short-circuit
-        if not tree:
-            return ()
-
-        # then check every branch and leaf for relevant commands
-        return tuple(self._command_lines_recursive(arguments, tree))
-
-    def commands_for_version_assert_base(self, version: str, arguments: QueryArguments) -> TupleOfStrings:
-        # get the root node and make sure the version is loaded
-        root_node = self.database.get(version)
-        if not root_node:
-            raise errors.NoSuchVersion(version)
-
-        # make sure a command was provided
-        if len(arguments.command) > 0:
-            base_command = arguments.command[0]
-        else:
-            raise errors.MissingCommand()
-
-        # make sure the base command is valid
-        base_node = root_node.children.get(base_command)
-        if not base_node:
-            raise errors.NoSuchCommand(base_command)
-
-        # proceed as usual
-        return self.commands_for_version(version, arguments)
+        # proceed only if the query returned something
+        if query_tree:
+            # then check every branch and leaf for relevant commands
+            # get all leaves of the query tree, and then all of the leaves of their corresponding data nodes
+            for leaf in query_tree.leaves():
+                yield from self._commands_recursives(arguments, leaf.data_node)
 
     def results_from_arguments(self, arguments: QueryArguments) -> QueryResults:
         filtered_versions = self.filter_versions(arguments)
@@ -207,7 +168,7 @@ class QueryManager:
         results = {}
         for version in filtered_versions:
             try:
-                commands = self.commands_for_version(version, arguments)
+                commands = tuple(self.commands_for_version(version, arguments))
 
             # ignore unknown versions and commands because we may have other results
             except (errors.NoSuchVersion, errors.NoSuchCommand):

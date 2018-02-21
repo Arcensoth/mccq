@@ -11,13 +11,13 @@ class CLICompleter:
         self.completions = []
 
     def make_completions_for_version(self, version: str, arguments: QueryArguments) -> IterableOfStrings:
-        # build a trimmed result tree as an intermediate result
-        tree = self.query_manager.tree_for_version(version, arguments)
+        # build a query tree as an intermediate result
+        query_tree = self.query_manager.query_tree_for_version(version, arguments)
 
-        # yield the single argument name from each leaf node
-        if tree:
-            for leaf in tree.leaves():
-                yield leaf.key
+        # yield the key of the data node from each leaf of the query tree
+        if query_tree:
+            for leaf in query_tree.leaves():
+                yield leaf.data_node.key
 
     def make_completions(self) -> IterableOfStrings:
         # this works similarly to actually querying a command, but instead of yielding all results we yield all leaf

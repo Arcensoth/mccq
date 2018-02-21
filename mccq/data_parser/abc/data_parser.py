@@ -1,6 +1,6 @@
 import abc
 
-from mccq.data_node import DataNode
+from mccq.node.data_node import DataNode
 
 
 class DataParser(abc.ABC):

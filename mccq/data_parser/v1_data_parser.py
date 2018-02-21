@@ -1,4 +1,4 @@
-from mccq.data_node import DataNode
+from mccq.node.data_node import DataNode
 from mccq.data_parser.abc.data_parser import DataParser
 
 
@@ -43,20 +43,20 @@ class V1DataParser(DataParser):
         my_command_t = ' '.join(arg_t for arg_t in ((command_t or None,) + args_t) if arg_t is not None)
 
         # build children, if any
-        my_children = {k: self._build(k, v, my_command, my_command_t) for k, v in children.items()}
+        my_children = tuple(self._build(k, v, my_command, my_command_t) for k, v in children.items())
 
         # count population
-        population = sum(child.population for child in my_children.values())
+        population = sum(child.population for child in my_children)
         if relevant:
             population += 1
 
         # build collapsed form
         collapsed = collapsed_t = None
         if my_children:
-            collapsed = ' '.join((my_command, '|'.join((child.argument for child in my_children.values()))))
-            collapsed_t = ' '.join((my_command_t, '|'.join((child.argument_t for child in my_children.values()))))
+            collapsed = ' '.join((my_command, '|'.join((child.argument for child in my_children))))
+            collapsed_t = ' '.join((my_command_t, '|'.join((child.argument_t for child in my_children))))
             # look for at least one grandchild before appending `...`
-            if next((True for child in my_children.values() if child.children), False):
+            if next((True for child in my_children if child.children), False):
                 collapsed += ' ...'
                 collapsed_t += ' ...'
 

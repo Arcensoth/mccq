@@ -5,7 +5,7 @@ from mccq import errors
 from mccq.data_loader.abc.data_loader import DataLoader
 from mccq.data_loader.filesystem_data_loader import FilesystemDataLoader
 from mccq.data_loader.internet_data_loader import InternetDataLoader
-from mccq.data_node import DataNode
+from mccq.node.data_node import DataNode
 from mccq.data_parser.abc.data_parser import DataParser
 from mccq.data_parser.v1_data_parser import V1DataParser
 from mccq.typedefs import IterableOfStrings, TupleOfStrings
