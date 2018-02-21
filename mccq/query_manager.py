@@ -1,7 +1,9 @@
 import re
+import shlex
 import typing
 
-from mccq import errors, utils
+from mccq import errors
+from mccq.argument_parser import ArgumentParser
 from mccq.data_node import DataNode
 from mccq.query_arguments import QueryArguments
 from mccq.typedefs import IterableOfStrings, TupleOfStrings
@@ -13,6 +15,27 @@ QueryResults = typing.Dict[str, TupleOfStrings]
 
 
 class QueryManager:
+    ARGUMENT_PARSER = ArgumentParser(
+        'mccq',
+        description='Minecraft command query program. Inspired by the in-game help command, with added features like'
+                    'multiple version support and expandable regex search.',
+        add_help=False)
+
+    ARGUMENT_PARSER.add_argument(
+        '-t', '--showtypes', action='store_true', help='whether to show argument types')
+
+    ARGUMENT_PARSER.add_argument(
+        '-e', '--explode', action='store_true', help='whether to expand all subcommands, regardless of capacity')
+
+    ARGUMENT_PARSER.add_argument(
+        '-c', '--capacity', type=int, default=3, help='maximum number of subcommands to render before collapsing')
+
+    ARGUMENT_PARSER.add_argument(
+        '-v', '--version', action='append', default=[], help='which version(s) to use for the command (repeatable)')
+
+    ARGUMENT_PARSER.add_argument(
+        'command', nargs='+', help='the command query')
+
     def __init__(
             self,
             database: VersionDatabase,
@@ -20,6 +43,24 @@ class QueryManager:
     ):
         self.database = database
         self.show_versions: TupleOfStrings = tuple(show_versions)
+
+    @staticmethod
+    def parse_query_arguments(command: str) -> QueryArguments:
+        try:
+            # split into tokens using shell-like syntax (preserve quoted substrings)
+            parsed_args = QueryManager.ARGUMENT_PARSER.parse_args(shlex.split(command))
+
+            # return an object representation
+            return QueryArguments(
+                command=tuple(parsed_args.command),  # immutable copy
+                showtypes=parsed_args.showtypes,
+                explode=parsed_args.explode,
+                capacity=parsed_args.capacity,
+                versions=tuple(parsed_args.version),  # duplicate versions are meaningless
+            )
+
+        except Exception as ex:
+            raise errors.ArgumentParserFailed(command) from ex
 
     def _command_lines_from_node(self, arguments: QueryArguments, node: DataNode) -> IterableOfStrings:
         command = node.command_t if arguments.showtypes else node.command
@@ -130,4 +171,4 @@ class QueryManager:
         return results
 
     def results(self, command: str) -> QueryResults:
-        return self.results_from_arguments(utils.parse_query_arguments(command))
+        return self.results_from_arguments(self.parse_query_arguments(command))

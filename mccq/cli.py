@@ -1,4 +1,3 @@
-import argparse
 import logging
 import os
 import shlex
@@ -6,13 +5,14 @@ import sys
 import urllib.parse
 
 from mccq import errors
+from mccq.argument_parser import ArgumentParser
 from mccq.query_manager import QueryManager
 from mccq.version_database import LOADER_MAP, VersionDatabase
 
 # TODO other os, edge cases
 local_database = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming', '.minecraft', 'versions')
 
-startup_parser = argparse.ArgumentParser(
+startup_parser = ArgumentParser(
     'mccq',
     description='Minecraft command query program. Inspired by the in-game help command, with added features like '
                 'version reporting and expandable regex search.')
