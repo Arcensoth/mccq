@@ -24,7 +24,7 @@ startup_parser.add_argument(
     '-d', '--database_uri', default=local_database, help='the uri from where versions will be loaded')
 
 startup_parser.add_argument(
-    '-l', '--log', default='WARNING', help='log level')
+    '-l', '--log', default=logging.WARNING, help='log level')
 
 try:
     startup_args = startup_parser.parse_args(shlex.split(' '.join(sys.argv[1:])))
