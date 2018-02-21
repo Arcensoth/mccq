@@ -2,6 +2,7 @@ import logging
 import shlex
 
 from mccq import errors
+from mccq.cli.meta import META_MAP
 from mccq.query_manager import QueryManager
 
 log = logging.getLogger(__name__)
@@ -22,17 +23,20 @@ def cli_loop(qm: QueryManager):
                 meta_args = shlex.split(meta_command)
                 meta_root = meta_args[0]
 
-                if meta_root in {'x', 'exit'}:
+                if meta_root in META_MAP['exit']:
                     return
 
-                elif meta_root in {'r', 'reload'}:
+                elif meta_root in META_MAP['reload']:
                     qm.database.reload()
 
-                elif meta_root in {'s', 'show'}:
+                elif meta_root in META_MAP['show']:
                     qm.show_versions = tuple(meta_args[1:])
 
-            except Exception as ex:
-                print(f'Error: {ex}')
+                else:
+                    raise ValueError('Invalid command', command)
+
+            except Exception:
+                print('Invalid command, please try again.')
                 if log.isEnabledFor(logging.DEBUG):
                     log.exception('Error')
 
