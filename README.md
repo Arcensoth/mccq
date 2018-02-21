@@ -5,7 +5,7 @@ Minecraft command query program. Inspired by the in-game help command, with adde
 ## Basic usage
 Enter the CLI (command line interface) with some default version, say `18w03b`:
 ```bash
-python -m mccq.cli -s 18w03b
+python -m mccq -s 18w03b
 ```
 
 Start with a basic command:
