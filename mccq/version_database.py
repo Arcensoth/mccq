@@ -114,4 +114,4 @@ class VersionDatabase:
         # otherwise filter out versions that are not whitelisted
         available_versions = set(requested_versions).intersection(self.whitelist)
         # make sure to preserve order
-        return (version for version in requested_versions if version in available_versions)
+        return tuple(version for version in requested_versions if version in available_versions)
