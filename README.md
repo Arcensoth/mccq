@@ -118,7 +118,7 @@ execute as <targets> -> execute
 execute at <targets> -> execute
 ```
 
-And so any combination of subcommands/arguments to be flexibly queried:
+And so any combination of subcommands/arguments can be flexibly queried:
 ```bash
 > t.* targets
 # 18w01a
