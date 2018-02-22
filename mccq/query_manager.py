@@ -92,7 +92,6 @@ class QueryManager:
 
         # at this point 'else' means there are still tokens to search, so the query goes deeper than the current node
         # and we can just ignore it
-        ...
 
     def _commands_recursives(self, arguments: QueryArguments, node: DataNode) -> IterableOfStrings:
         command = node.command_t if arguments.showtypes else node.command
