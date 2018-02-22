@@ -1,13 +1,14 @@
 import logging
 import typing
+import urllib.parse
 
 from mccq import errors
 from mccq.data_loader.abc.data_loader import DataLoader
 from mccq.data_loader.filesystem_data_loader import FilesystemDataLoader
 from mccq.data_loader.internet_data_loader import InternetDataLoader
-from mccq.node.data_node import DataNode
 from mccq.data_parser.abc.data_parser import DataParser
 from mccq.data_parser.v1_data_parser import V1DataParser
+from mccq.node.data_node import DataNode
 from mccq.typedefs import IterableOfStrings, TupleOfStrings
 
 log = logging.getLogger(__name__)
@@ -28,34 +29,48 @@ PARSER_MAP = {
 DATA_FILE_TAIL = ('generated', 'reports', 'commands.json')
 
 
-class VersionDatabase:
-    DEFAULT_LOADER = 'file'
-    DEFAULT_PARSER = 'v1'
+def find_loader(obj, uri) -> DataLoader:
+    try:
+        if obj is None:
+            # auto-detect database source to instantiate an appropriate loader
+            uri_scheme = urllib.parse.urlparse(uri).scheme
+            return LOADER_MAP.get(uri_scheme, LOADER_MAP['file'])()
 
+        elif isinstance(obj, str):
+            return LOADER_MAP[obj]()
+
+        elif isinstance(obj, DataLoader):
+            return obj
+
+    except Exception as ex:
+        raise errors.InvalidLoader(obj) from ex
+
+
+def find_parser(obj) -> DataParser:
+    try:
+        if obj is None:
+            # default to the only available parser
+            return PARSER_MAP['v1']()
+
+        elif isinstance(obj, str):
+            return PARSER_MAP[obj]()
+
+        elif isinstance(obj, DataParser):
+            return obj
+
+    except Exception as ex:
+        raise errors.InvalidParser(obj) from ex
+
+
+class VersionDatabase:
     def __init__(
-            self, uri: str, loader: LoaderGeneric = DEFAULT_LOADER, parser: ParserGeneric = DEFAULT_PARSER,
+            self, uri: str, loader: LoaderGeneric = None, parser: ParserGeneric = None,
             whitelist: IterableOfStrings = ()):
         self.uri = uri
         self.whitelist = set(whitelist)
-
-        if isinstance(loader, str):
-            loader_ctor = LOADER_MAP.get(loader)
-            if not loader_ctor:
-                raise errors.UnknownLoader(loader)
-            loader = loader_ctor()
-
-        self.loader: DataLoader = loader
-
-        if isinstance(parser, str):
-            parser_ctor = PARSER_MAP.get(parser)
-            if not parser_ctor:
-                raise errors.UnknownParser(parser)
-            parser = parser_ctor()
-
-        self.parser: DataParser = parser
-
+        self.loader: DataLoader = find_loader(loader, uri)
+        self.parser: DataParser = find_parser(parser)
         self._cache: typing.Dict[str, DataNode] = {}
-
         self.reload()
 
     def _load(self, version: str):

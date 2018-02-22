@@ -2,12 +2,11 @@ import logging
 import os
 import shlex
 import sys
-import urllib.parse
 
 from mccq.argument_parser import ArgumentParser
 from mccq.cli.loop import cli_loop
 from mccq.query_manager import QueryManager
-from mccq.version_database import LOADER_MAP, VersionDatabase
+from mccq.version_database import VersionDatabase
 
 # TODO other os, edge cases
 local_database = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming', '.minecraft', 'versions')
@@ -38,20 +37,12 @@ log = logging.getLogger(__name__)
 show_versions = startup_args.show_versions
 database_uri = startup_args.database_uri
 
-# the uri scheme determines from where to load the data
-uri_scheme = urllib.parse.urlparse(database_uri).scheme
-
-# fallback to filesystem loader
-uri_scheme = uri_scheme if uri_scheme in LOADER_MAP else 'file'
-
 db = VersionDatabase(
-    uri=database_uri,
-    loader=uri_scheme)
+    uri=database_uri)
 
 qm = QueryManager(
     database=db,
     show_versions=show_versions)
-
 
 print('[::] Minecraft Command Query CLI [::]')
 

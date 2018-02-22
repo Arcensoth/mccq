@@ -69,15 +69,15 @@ class NoSuchCommand(MCCQError):
         return f'Command does not exist: {self.command}'
 
 
-class UnknownLoader(MCCQError):
-    """ Raised when an unknown loader is specified. """
+class InvalidLoader(MCCQError):
+    """ Raised when an invalid data parser is provided. """
 
     def __init__(self, loader: str, *args):
         super().__init__(*args)
         self.loader = loader
 
     def __str__(self):
-        return f'Loader not recognized: {self.loader}'
+        return f'Invalid data loader: {self.loader}'
 
 
 class LoaderFailure(MCCQError):
@@ -91,15 +91,15 @@ class LoaderFailure(MCCQError):
         return f'Failed to load data for version {self.version}'
 
 
-class UnknownParser(MCCQError):
-    """ Raised when an unknown parser is specified. """
+class InvalidParser(MCCQError):
+    """ Raised when an invalid data parser is provided. """
 
     def __init__(self, parser: str, *args):
         super().__init__(*args)
         self.parser = parser
 
     def __str__(self):
-        return f'Parser not recognized: {self.parser}'
+        return f'Invalid data parser: {self.parser}'
 
 
 class ParserFailure(MCCQError):
