@@ -36,7 +36,7 @@ class VersionDatabase:
             self, uri: str, loader: LoaderGeneric = DEFAULT_LOADER, parser: ParserGeneric = DEFAULT_PARSER,
             whitelist: IterableOfStrings = ()):
         self.uri = uri
-        self.whitelist = whitelist
+        self.whitelist = set(whitelist)
 
         if isinstance(loader, str):
             loader_ctor = LOADER_MAP.get(loader)
@@ -92,7 +92,7 @@ class VersionDatabase:
             raise errors.VersionNotWhitelisted(version)
         self._cache[version] = root_node
 
-    def filter_versions(self, requested_versions) -> TupleOfStrings:
+    def filter_versions(self, requested_versions: IterableOfStrings) -> TupleOfStrings:
         # if no whitelist, everything is valid
         if not self.whitelist:
             return requested_versions
