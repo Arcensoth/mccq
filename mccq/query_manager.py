@@ -159,27 +159,36 @@ class QueryManager:
             for leaf in query_tree.leaves():
                 yield from self._commands_recursives(arguments, leaf.data_node)
 
-    def results_from_arguments(self, arguments: QueryArguments) -> QueryResults:
-        filtered_versions = self.filter_versions(arguments)
-
-        # build results
-        # make sure to handle version-specific errors
+    def results_from_versions(self, versions: IterableOfStrings, arguments: QueryArguments) -> QueryResults:
+        # ignore errors when multiple versions are specified
+        # (not sure how else to handle this gracefully)
         results = {}
-        for version in filtered_versions:
+        for version in versions:
             try:
                 commands = tuple(self.commands_for_version(version, arguments))
 
-            # ignore unknown versions and commands because we may have other results
-            except (errors.NoSuchVersion, errors.NoSuchCommand):
+            # ignore errors because we may have other results
+            except:
                 continue
-
-            # let this one through: errors.MissingCommand
-            # because if there's no command, the version doesn't matter
 
             # don't include versions with no results
             if commands:
                 results[version] = commands
 
+        return results
+
+    def results_from_version(self, version: str, arguments: QueryArguments) -> QueryResults:
+        # handle single version requests differently by allowing errors to propagate
+        return {
+            version: tuple(self.commands_for_version(version, arguments))
+        }
+
+    def results_from_arguments(self, arguments: QueryArguments) -> QueryResults:
+        filtered_versions = self.filter_versions(arguments)
+        if len(filtered_versions) > 1:
+            results = self.results_from_versions(filtered_versions, arguments)
+        else:
+            results = self.results_from_version(filtered_versions[0], arguments)
         return results
 
     def results(self, command: str) -> QueryResults:
