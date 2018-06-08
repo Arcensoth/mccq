@@ -184,3 +184,6 @@ class QueryManager:
 
     def results(self, command: str) -> QueryResults:
         return self.results_from_arguments(self.parse_query_arguments(command))
+
+    def reload(self):
+        self.database.reload()
