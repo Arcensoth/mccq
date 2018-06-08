@@ -85,7 +85,6 @@ class VersionDatabase:
             self._version_cache[version] = actual_version
             log.info(f'Loading commands for version {version} (actual {actual_version}) with components: {components}')
         except:
-            log.exception('Failed to load actual version:')
             log.info(f'Loading commands for version {version} with components: {components}')
 
         # load data from source
