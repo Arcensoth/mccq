@@ -64,19 +64,29 @@ def find_parser(obj) -> DataParser:
 
 class VersionDatabase:
     def __init__(
-            self, uri: str, loader: LoaderGeneric = None, parser: ParserGeneric = None,
+            self, uri: str, loader: LoaderGeneric = None, parser: ParserGeneric = None, version_file: str = None,
             whitelist: IterableOfStrings = ()):
         self.uri = uri
+        self.version_file = version_file
         self.whitelist = set(whitelist)
         self.loader: DataLoader = find_loader(loader, uri)
         self.parser: DataParser = find_parser(parser)
-        self._cache: typing.Dict[str, DataNode] = {}
-        self.reload()
+        self._node_cache: typing.Dict[str, DataNode] = {}
+        self._version_cache: typing.Dict[str, str] = {}
+
+    def _load_actual_version(self, version: str) -> str:
+        return self.loader.load_version((self.uri, version, self.version_file))
 
     def _load(self, version: str):
         components = (self.uri, version, *DATA_FILE_TAIL)
 
-        log.info(f'Loading commands for version {version} with components: {components}')
+        try:
+            actual_version = self._load_actual_version(version)
+            self._version_cache[version] = actual_version
+            log.info(f'Loading commands for version {version} (actual {actual_version}) with components: {components}')
+        except:
+            log.exception('Failed to load actual version:')
+            log.info(f'Loading commands for version {version} with components: {components}')
 
         # load data from source
         try:
@@ -92,20 +102,24 @@ class VersionDatabase:
 
         self.put(version, parsed)
 
+    def get_actual_version(self, version: str) -> str:
+        return self._version_cache.get(version)
+
     def reload(self):
-        self._cache = {}
+        self._node_cache = {}
+        self._version_cache = {}
 
     def get(self, version: str) -> DataNode:
         log.debug(f'Getting root node for version {version}')
-        if version not in self._cache:
+        if version not in self._node_cache:
             log.info(f'Loading version {version} into cache')
             self._load(version)
-        return self._cache[version]
+        return self._node_cache[version]
 
     def put(self, version: str, root_node: DataNode):
         if self.whitelist and version not in self.whitelist:
             raise errors.VersionNotWhitelisted(version)
-        self._cache[version] = root_node
+        self._node_cache[version] = root_node
 
     def filter_versions(self, requested_versions: IterableOfStrings) -> TupleOfStrings:
         # if no whitelist, everything is valid
