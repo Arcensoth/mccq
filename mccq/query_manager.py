@@ -18,8 +18,8 @@ QueryResults = typing.Dict[str, TupleOfStrings]
 class QueryManager:
     ARGUMENT_PARSER = ArgumentParser(
         'mccq',
-        description='Minecraft command query program. Inspired by the in-game help command, with added features like'
-                    'multiple version support and expandable regex search.',
+        description='Minecraft command query program. Inspired by the in-game help command, with added features like '
+                    'version reporting and expandable regex search.',
         add_help=False)
 
     ARGUMENT_PARSER.add_argument(
