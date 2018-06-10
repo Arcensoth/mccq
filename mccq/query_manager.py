@@ -179,9 +179,8 @@ class QueryManager:
 
     def results_from_version(self, version: str, arguments: QueryArguments) -> QueryResults:
         # handle single version requests differently by allowing errors to propagate
-        return {
-            version: tuple(self.commands_for_version(version, arguments))
-        }
+        commands = tuple(self.commands_for_version(version, arguments))
+        return {version: commands} if commands else {}
 
     def results_from_arguments(self, arguments: QueryArguments) -> QueryResults:
         filtered_versions = self.filter_versions(arguments)
