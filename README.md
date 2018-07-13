@@ -1,6 +1,16 @@
 # Minecraft Command Query
 Minecraft command query program. Inspired by the in-game help command, with added features like multiple version support and expandable regex search.
 
+[![package-badge]](https://pypi.python.org/pypi/mccq/)
+[![version-badge]](https://pypi.python.org/pypi/mccq/)
+
+## Installation
+Requires Python 3.6+, recommended with [virtualenv](https://virtualenv.pypa.io/en/stable/) or the like. Just install with `pip`:
+
+```
+pip install mccq
+```
+
 ## Database setup
 MCCQ requires access to generated server files (namely `commands.json`), and so is compatible with [Minecraft snapshot 18w01a](https://minecraft.net/en-us/article/minecraft-snapshot-18w01a) and up.
 
@@ -150,3 +160,6 @@ clone <begin> <end> <destination> masked
 clone <begin> <end> <destination> masked force|move|normal
 ```
 Which is a convenient way of quickly diving into the command.
+
+[package-badge]: https://img.shields.io/pypi/v/mccq.svg
+[version-badge]: https://img.shields.io/pypi/pyversions/mccq.svg
