@@ -70,7 +70,7 @@ class QueryManager:
 
         # use regex to search for the subcommand/argument name in the patternized token
         # special case: dot matches all
-        search_children = None if not token else node.children if token == '.' else tuple(
+        search_children = None if not token else node.children if token in ('.', '*') else tuple(
             child for child in node.children
             if re.search(token, child.key, re.IGNORECASE)
         )
