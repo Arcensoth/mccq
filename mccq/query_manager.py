@@ -29,7 +29,7 @@ class QueryManager:
         '-e', '--explode', action='store_true', help='whether to expand all subcommands, regardless of capacity')
 
     ARGUMENT_PARSER.add_argument(
-        '-c', '--capacity', type=int, default=3, help='maximum number of subcommands to render before collapsing')
+        '-c', '--capacity', type=int, default=12, help='maximum number of subcommands to render before collapsing')
 
     ARGUMENT_PARSER.add_argument(
         '-v', '--version', action='append', default=[], help='which version(s) to use for the command (repeatable)')
